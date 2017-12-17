@@ -2,7 +2,9 @@ import tempfile, os, shutil, re, base64
 
 class DocToHTMLPostProcessor():
 
-    def __init__(self, file_name):
+    def __init__(self, file_name, local_fonts = False, font_alternatives = False):
+        self.local_fonts = local_fonts
+        self.font_alternatives = font_alternatives
         self.process_html(file_name)
 
     def process_html(self, file_name):
@@ -13,10 +15,16 @@ class DocToHTMLPostProcessor():
         with tempfile.NamedTemporaryFile(dir=temp_dir, delete=False) as temporary, open(file_name, 'r') as source:
             temp_name = temporary.name
 
-            detected_fonts = self.get_document_fonts(source)
-            available_fonts = self.get_physical_fonts('fonts/')
-            font_alternatives = self.get_font_alternatives('fonts/alternatives.list')
-            (resolved_fonts, resolved_alternatives) = self.get_resolved_fonts(detected_fonts, available_fonts, font_alternatives)
+            if self.local_fonts:
+                detected_fonts = self.get_document_fonts(source)
+                available_fonts = self.get_physical_fonts(self.local_fonts)
+
+                if self.font_alternatives:
+                    font_alternatives = self.get_font_alternatives()
+                else:
+                    font_alternatives = []
+
+                (resolved_fonts, resolved_alternatives) = self.get_resolved_fonts(detected_fonts, available_fonts, font_alternatives)
 
             line_context = dict(head=False, body=False, script=False, style=False)
 
@@ -28,8 +36,9 @@ class DocToHTMLPostProcessor():
                     line_context['head'] = True
 
                 if re.search('</head[^>]*>', line, re.IGNORECASE):
-                    self.write_document_style(temporary)
-                    self.write_font_imports(temporary, resolved_fonts)
+                    if self.local_fonts:
+                        self.write_document_style(temporary)
+                        self.write_font_imports(temporary, resolved_fonts)
                     line_context['head'] = False
 
                 if re.search('<body[^>]*>', line, re.IGNORECASE):
@@ -50,16 +59,19 @@ class DocToHTMLPostProcessor():
                 if re.search('</style[^>]*>', line, re.IGNORECASE):
                     line_context['style'] = False
 
-                temporary.write(self.replace_line_fonts(line, resolved_alternatives, line_context))
+                if self.local_fonts:
+                    line = self.replace_line_fonts(line, resolved_alternatives, line_context)
+
+                temporary.write(line)
 
         os.remove(file_name)
         os.rename(temp_name, file_name)
         shutil.rmtree(temp_dir)
 
-    def get_font_alternatives(self, path):
+    def get_font_alternatives(self):
         font_alternatives = []
 
-        with open(path, 'r') as fonts_file:
+        with open(self.font_alternatives, 'r') as fonts_file:
             for line in fonts_file:
                 font_alternatives.append(
                     map(lambda name: name.strip().replace('"', '').replace("'", ""), line.rstrip().split(',')))
