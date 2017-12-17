@@ -1,0 +1,49 @@
+"Arial Black", "Archivo Black", sans-serif
+"Comic Sans MS", "Comic Neue", sans-serif
+"Verdana", "DejaVu Sans", sans-serif
+"Geneva", "DejaVu Sans", sans-serif
+"Lucida Grande", "Lucida Sans Unicode", "Bitstream Vera Sans", sans-serif
+"Bitstream Vera Sans", "Lucida Grande", "Lucida Sans Unicode", sans-serif
+"Lucida Sans Unicode", "Lucida Grande", "Bitstream Vera Sans", sans-serif
+"Helvetica", "Nimbus Sans", sans-serif
+"Arial", "Helvetica", "Nimbus Sans L", sans-serif
+"Tahoma", "Helvetica", "Nimbus Sans L", sans-serif
+"Trebuchet MS", "Helvetica", "Nimbus Sans L", sans-serif
+"MS Sans Serif", "Helvetica", "Liberation Sans", sans-serif
+"Univers", "Helvetica", "Liberation Sans", sans-serif
+"Proxima Nova", "Montserrat", sans-serif
+"ITC Avant Garde Gothic", "URW Gothic L", sans-serif
+"Futura", "Futura-Medium", "Futura Medium", "Futura PT", "Century Gothic","URW Gothic L", sans-serif
+"Futura-Medium", "Futura", "Futura Medium", "Futura PT", "Century Gothic", "URW Gothic L", sans-serif
+"Futura Medium", "Futura-Medium", "Futura", "Futura PT", "Century Gothic", "URW Gothic L", sans-serif
+"Futura PT", "Futura Medium", "Futura-Medium", "Futura", "Century Gothic", "URW Gothic L", sans-serif
+"Century Gothic", "URW Gothic L", sans-serif
+"Apple Gothic", "AppleGothic", "URW Gothic L", sans-serif
+"AppleGothic", "Apple Gothic", "URW Gothic L", sans-serif
+"Letter Gothic", "URW Gothic L", sans-serif
+"Arial Narrow", "Nimbus Sans L Condensed", sans-serif
+"Helvetica Condensed", "Nimbus Sans L Condensed", sans-serif
+"Calibri", "Carlito", sans-serif
+"FF Din", "Roboto", sans-serif
+"FreeSans", "Liberation Sans", sans-serif
+"Free Sans", "Liberation Sans", sans-serif
+"Courier", "Courier New", "Nimbus Mono L", monospace
+"Courier New", "Courier", "Nimbus Mono L", monospace
+"Monaco", "Ubuntu Mono", "DejaVu Sans", monospace
+"Andale Mono", "Ubuntu Mono", "Dejavu Sans", monospace
+"Times New Roman", "Times", "Liberation Serif", serif
+"Times", "Times New Roman", "Liberation Serif", serif
+"Baskerville", "Libre Baskerville", serif
+"Garamond", "Berthold Garamond", "EB Garamond", serif
+"Berthold Garamond", "Garamond", "EB Garamond", serif
+"Georgia", "URW Bookman L", serif
+"Book Antiqua", "Bookman Old Style", "URW Bookman L", serif
+"Bookman", "Bookman Old Style", "URW Bookman L", serif
+"New Century Schoolbook", "Century Schoolbook L", serif
+"Century Schoolbook", "Century Schoolbook L", serif
+"Palatino", "Palatino Linotype", "URW Palladio L", serif
+"Goudy Old Style", "Palatino", "Palatino Linotype", "URW Palladio L", serif
+"Book Antiqua", "URW Palladio L", serif
+"Cambria", "Caladea", serif
+"FreeSerif", "Liberation Serif", serif
+"Free Serif", "Liberation Serif", serif
