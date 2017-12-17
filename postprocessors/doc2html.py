@@ -2,11 +2,12 @@ import tempfile, os, shutil, re, base64
 
 class DocToHTMLPostProcessor():
 
-    def __init__(self, file_name, local_fonts = False, font_alternatives = False, inline_images = True):
+    def __init__(self, file_name, output_path, local_fonts = False, font_alternatives = False, inline_images = True):
+        self.file_name = file_name
+        self.output_path = output_path
         self.local_fonts = local_fonts
         self.inline_images = inline_images
         self.font_alternatives = font_alternatives
-        self.file_name = file_name
         self.images_to_delete = []
         self.process_html()
 
@@ -84,13 +85,16 @@ class DocToHTMLPostProcessor():
 
         for image in re.finditer('<img[^<>]+src="([^"]+)"', line, re.IGNORECASE):
 
-            image_path = os.path.dirname(os.path.abspath(self.file_name)) + '/' + image.group(1)
+            image_path = self.output_path + '/' + image.group(1)
+            if 'data:' in image_path:
+                continue
+
             with open(image_path, 'rb') as image_file:
                 extension = os.path.splitext(image_path)[1][1:]
                 encoded_string = base64.b64encode(image_file.read())
                 line = line[:image.start(1)] + 'data:image/' + extension + ';base64,' + encoded_string + line[image.end(1):]
 
-        self.images_to_delete.append(image_path)
+            self.images_to_delete.append(image_path)
 
         return line
 
