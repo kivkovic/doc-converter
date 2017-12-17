@@ -1,7 +1,5 @@
-import os
-import re
+import os, shutil, re, sys, tempfile
 
-import sys
 sys.path.append('./postprocessors')
 
 from doc2html import DocToHTMLPostProcessor
@@ -13,12 +11,18 @@ def convert(file_path, target_format, executable='libreoffice'):
         raise Exception('File not found')
 
     outdir = re.sub('^(.+)[/\\\\][^/\\\\]+$', '\\1', file_path)
+    temp_profile_dir = tempfile.mkdtemp(prefix='doc-converter_').replace('\\', '/')
+    env_override_user = '-env:UserInstallation=file:///' + temp_profile_dir + ''
 
-    response = os.system(' '.join([
-        executable, '--headless', '--invisible', '--convert-to', target_format, '--outdir', outdir, file_path
-    ]))
+    command = ' '.join([
+        executable, env_override_user, '--headless', '--invisible', '--convert-to', target_format, '--outdir', outdir, file_path
+    ])
+
+    response = os.system(command)
 
     if target_format == 'html' and re.match('.*\.(docx?|odt)$', file_path, re.IGNORECASE):
         DocToHTMLPostProcessor(re.sub('^(.+)\.(docx?|odt)$', '\\1.html', file_path, re.IGNORECASE))
+
+    shutil.rmtree(temp_profile_dir)
 
     return response == 0
