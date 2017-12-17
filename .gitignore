@@ -1,2 +1,8 @@
 *.pyc
 ~*
+fonts/*.otf
+fonts/*.ttf
+fonts/*.woff
+fonts/*.woff2
+fonts/*.afm
+fonts/*.txt
