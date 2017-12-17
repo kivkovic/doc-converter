@@ -11,17 +11,30 @@ def convert(file_path, target_format, output_path = None, executable='libreoffic
         raise Exception('File not found')
 
     output_path = output_path or re.sub('^(.+)[/\\\\][^/\\\\]+$', '\\1', file_path)
+
     temp_profile_dir = tempfile.mkdtemp(prefix='doc-converter_').replace('\\', '/')
     env_override_user = '-env:UserInstallation=file:///' + temp_profile_dir + ''
 
     command = ' '.join([
-        executable, env_override_user, '--headless', '--invisible', '--convert-to', target_format, '--outdir', output_path, file_path
+        executable,
+        env_override_user,
+        '--headless',
+        '--invisible',
+        '--convert-to', target_format,
+        '--outdir', output_path,
+        file_path
     ])
 
     response = os.system(command)
 
     if target_format == 'html' and re.match('.*\.(docx?|odt)$', file_path, re.IGNORECASE):
-        DocToHTMLPostProcessor(re.sub('^(.+)\.(docx?|odt)$', '\\1.html', file_path, re.IGNORECASE), output_path, local_fonts = local_fonts, font_alternatives = font_alternatives, inline_images = inline_images)
+        DocToHTMLPostProcessor(
+            re.sub('^(.+)\.(docx?|odt)$', '\\1.html', file_path, re.IGNORECASE),
+            output_path = output_path,
+            local_fonts = local_fonts,
+            font_alternatives = font_alternatives,
+            inline_images = inline_images
+        )
 
     shutil.rmtree(temp_profile_dir)
 
