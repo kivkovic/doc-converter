@@ -5,23 +5,23 @@ sys.path.append('./postprocessors')
 from doc2html import DocToHTMLPostProcessor
 
 
-def convert(file_path, target_format, executable='libreoffice', local_fonts = False, font_alternatives = False, inline_images = True):
+def convert(file_path, target_format, output_path = None, executable='libreoffice', local_fonts = False, font_alternatives = False, inline_images = True):
 
     if not os.path.isfile(file_path):
         raise Exception('File not found')
 
-    outdir = re.sub('^(.+)[/\\\\][^/\\\\]+$', '\\1', file_path)
+    output_path = output_path or re.sub('^(.+)[/\\\\][^/\\\\]+$', '\\1', file_path)
     temp_profile_dir = tempfile.mkdtemp(prefix='doc-converter_').replace('\\', '/')
     env_override_user = '-env:UserInstallation=file:///' + temp_profile_dir + ''
 
     command = ' '.join([
-        executable, env_override_user, '--headless', '--invisible', '--convert-to', target_format, '--outdir', outdir, file_path
+        executable, env_override_user, '--headless', '--invisible', '--convert-to', target_format, '--outdir', output_path, file_path
     ])
 
     response = os.system(command)
 
     if target_format == 'html' and re.match('.*\.(docx?|odt)$', file_path, re.IGNORECASE):
-        DocToHTMLPostProcessor(re.sub('^(.+)\.(docx?|odt)$', '\\1.html', file_path, re.IGNORECASE), local_fonts = local_fonts, font_alternatives = font_alternatives, inline_images = inline_images)
+        DocToHTMLPostProcessor(re.sub('^(.+)\.(docx?|odt)$', '\\1.html', file_path, re.IGNORECASE), output_path, local_fonts = local_fonts, font_alternatives = font_alternatives, inline_images = inline_images)
 
     shutil.rmtree(temp_profile_dir)
 
@@ -33,16 +33,18 @@ if __name__ == '__main__':
     import getopt
 
     def usage():
-        print('python converter.py -s [FILE] -f [FORMAT] [-e [LIBREOFFICE_PATH]] [-l [FONTS_DIR]] [-a [FONT_ALTERNATIVES_FILE]] [-i]')
+        print('python converter.py -i [INPUT_FILE] -o [OUTPUT_FILE] -f [FORMAT] [--executable=[LIBREOFFICE_PATH]] [--local-fonts=[LOCAL_FONTS]] [-font-alternatives=[FONT_ALTERNATIVES]] [--inline-images]')
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 's:f:e:l:a:ih')
-    except getopt.GetoptError:
+        opts, args = getopt.getopt(sys.argv[1:], 'i:o:f:', ['executable=', 'local-fonts=', 'font-alternatives=', 'inline-images'])
+    except getopt.GetoptError as e:
+        print(e)
         usage()
         sys.exit(2)
 
     file_path = None
     target_format = None
+    output_path = None
     executable='libreoffice'
     local_fonts = False
     font_alternatives = False
@@ -52,24 +54,26 @@ if __name__ == '__main__':
         if opt == '-h':
             usage()
             sys.exit(2)
-        elif opt == '-s':
+        elif opt == '-i':
             file_path = arg
+        elif opt == '-o':
+            output_path = arg
         elif opt == '-f':
             target_format = arg
-        elif opt == '-e':
+        elif opt == '--executable':
             executable = arg
-        elif opt == '-l':
+        elif opt == '--local-fonts':
             local_fonts = arg
             if not local_fonts[-1] in ['/','\\']:
                 local_fonts += '/'
-        elif opt == '-a':
+        elif opt == '--font-alternatives':
             font_alternatives = arg
-        elif opt == '-i':
+        elif opt == '--inline-images':
             inline_images = True
 
         else:
             usage()
-            sys.exit(2)
+            raise Exception('Invalid parameter: ' + arg)
 
     if not file_path:
         usage()
@@ -79,5 +83,5 @@ if __name__ == '__main__':
         usage()
         raise Exception('Target format not specified')
 
-    result = convert(file_path, target_format, executable, local_fonts, font_alternatives, inline_images)
+    result = convert(file_path, target_format, output_path, executable, local_fonts, font_alternatives, inline_images)
     print(result and 'OK' or 'UNSPECIFIED ERROR')
