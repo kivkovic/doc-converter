@@ -24,30 +24,30 @@ class DocToHTMLPostProcessor():
             temporary.seek(0)
 
             for line in source:
-                if re.match('.*<head[^>]*>.*', line, re.IGNORECASE):
+                if re.search('<head[^>]*>', line, re.IGNORECASE):
                     line_context['head'] = True
 
-                if re.match('.*</head[^>]*>.*', line, re.IGNORECASE):
+                if re.search('</head[^>]*>', line, re.IGNORECASE):
                     self.write_document_style(temporary)
                     self.write_font_imports(temporary, resolved_fonts)
                     line_context['head'] = False
 
-                if re.match('.*<body[^>]*>.*', line, re.IGNORECASE):
+                if re.search('<body[^>]*>', line, re.IGNORECASE):
                     line_context['body'] = True
 
-                if re.match('.*</body[^>]*>.*', line, re.IGNORECASE):
+                if re.search('</body[^>]*>', line, re.IGNORECASE):
                     line_context['body'] = False
 
-                if re.match('.*<script[^>]*>.*', line, re.IGNORECASE):
+                if re.search('<script[^>]*>', line, re.IGNORECASE):
                     line_context['script'] = True
 
-                if re.match('.*</script[^>]*>.*', line, re.IGNORECASE):
+                if re.search('</script[^>]*>', line, re.IGNORECASE):
                     line_context['script'] = False
 
-                if re.match('.*<style[^>]*>.*', line, re.IGNORECASE):
+                if re.search('<style[^>]*>', line, re.IGNORECASE):
                     line_context['style'] = True
 
-                if re.match('.*</style[^>]*>.*', line, re.IGNORECASE):
+                if re.search('</style[^>]*>', line, re.IGNORECASE):
                     line_context['style'] = False
 
                 temporary.write(self.replace_line_fonts(line, resolved_alternatives, line_context))
@@ -70,7 +70,7 @@ class DocToHTMLPostProcessor():
         document_file.seek(0)
         fonts = []
         for line in document_file:
-            if re.match('.*font(-family:|\\s+face\\s*=).*', line, re.IGNORECASE):
+            if re.search('font(-family:|\\s+face\\s*=)', line, re.IGNORECASE):
                 fontfamily = re.findall('[{\\s;"](font-family:\\s*([^;}]+))["\\s;}]', line, re.IGNORECASE)
                 fontface = re.findall('<\\s*(font[^>]+face\\s*=\\s*\"([^\"]+)\")\\s*>', line, re.IGNORECASE)
                 for font in fontfamily + fontface:
@@ -151,7 +151,7 @@ class DocToHTMLPostProcessor():
         return fonts
 
     def replace_line_fonts(self, line, font_alternatives, line_context):
-        if re.match('.*font(-family:|\\s+face\\s*=).*', line, re.IGNORECASE):
+        if re.search('font(-family:|\\s+face\\s*=)', line, re.IGNORECASE):
             for font in font_alternatives:
                 if line_context['style'] and not line_context['script']:
                     line = re.sub('(font-family:)\\s*("?' + font + '"?[^;}]+)', '\\1 ' + font_alternatives[font], line, re.IGNORECASE)
@@ -194,22 +194,22 @@ class DocToHTMLPostProcessor():
     def guess_weight(self, name):
         suffix = '\\s*(cond(ensed)?|obliq(ue)?|ital(ic)?)?$'
         # try larger matches first
-        if re.match('((ultra|heavy)-?(black|bold)|extra-?black|fat|poster)' + suffix, name, re.IGNORECASE):
+        if re.search('((ultra|heavy)-?(black|bold)|extra-?black|fat|poster)' + suffix, name, re.IGNORECASE):
             return 900
-        if re.match('(heavy|black|extra-?bold)' + suffix, name, re.IGNORECASE):
+        if re.search('(heavy|black|extra-?bold)' + suffix, name, re.IGNORECASE):
             return 800
-        if re.match('((s|d)emi-?bold)' + suffix, name, re.IGNORECASE):
+        if re.search('((s|d)emi-?bold)' + suffix, name, re.IGNORECASE):
             return 600
-        if re.match('(bold)' + suffix, name, re.IGNORECASE):
+        if re.search('(bold)' + suffix, name, re.IGNORECASE):
             return 700
-        if re.match('(thin|hairline|(ultra|extra)-?light)' + suffix, name, re.IGNORECASE):
+        if re.search('(thin|hairline|(ultra|extra)-?light)' + suffix, name, re.IGNORECASE):
             return 100
-        if re.match('(light)' + suffix, name, re.IGNORECASE):
+        if re.search('(light)' + suffix, name, re.IGNORECASE):
             return 200
-        if re.match('(medium)' + suffix, name, re.IGNORECASE):
+        if re.search('(medium)' + suffix, name, re.IGNORECASE):
             return 500
-        if re.match('(book)' + suffix, name, re.IGNORECASE):
+        if re.search('(book)' + suffix, name, re.IGNORECASE):
             return 300
-        if re.match('(regular|normal|plain|standard|roman)' + suffix, name, re.IGNORECASE):
+        if re.search('(regular|normal|plain|standard|roman)' + suffix, name, re.IGNORECASE):
             return 400
         return None
