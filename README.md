@@ -1,6 +1,6 @@
 # doc-converter
 
-A Python CLI script for document conversion between various file formats with advanced postprocessing capabilities. Allows conversion between various office document formats (`doc`<->`docx`<->`odt`, `xls`<->`xlsx`<->`ods`, `ppt`<->`pptx`<->`odp`) and exporting to various standard formats (`pdf`,`html`,`png`, etc.). Constists of a Python wrapper around Libreoffice a custom-built postprocessors.
+A Python CLI script for document conversion between various file formats with advanced postprocessing capabilities. Allows conversion between various office document formats (`doc`<->`docx`<->`odt`, `xls`<->`xlsx`<->`ods`, `ppt`<->`pptx`<->`odp`) and exporting to various standard formats (`pdf`,`html`,`png`, etc.). Constists of a Python wrapper around Libreoffice and some custom-built postprocessors.
 
 ## Usage
 
