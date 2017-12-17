@@ -2,18 +2,21 @@ import tempfile, os, shutil, re, base64
 
 class DocToHTMLPostProcessor():
 
-    def __init__(self, file_name, local_fonts = False, font_alternatives = False):
+    def __init__(self, file_name, local_fonts = False, font_alternatives = False, inline_images = True):
         self.local_fonts = local_fonts
+        self.inline_images = inline_images
         self.font_alternatives = font_alternatives
-        self.process_html(file_name)
+        self.file_name = file_name
+        self.images_to_delete = []
+        self.process_html()
 
-    def process_html(self, file_name):
+    def process_html(self):
 
-        temp_dir = tempfile.mkdtemp(prefix='doc2html_')
-        temp_name = None
+        self.temp_dir = tempfile.mkdtemp(prefix='doc2html_')
+        self.temp_name = None
 
-        with tempfile.NamedTemporaryFile(dir=temp_dir, delete=False) as temporary, open(file_name, 'r') as source:
-            temp_name = temporary.name
+        with tempfile.NamedTemporaryFile(dir=self.temp_dir, delete=False) as temporary, open(self.file_name, 'r') as source:
+            self.temp_name = temporary.name
 
             if self.local_fonts:
                 detected_fonts = self.get_document_fonts(source)
@@ -62,11 +65,34 @@ class DocToHTMLPostProcessor():
                 if self.local_fonts:
                     line = self.replace_line_fonts(line, resolved_alternatives, line_context)
 
+                if self.inline_images:
+                    line = self.replace_images(line)
+
                 temporary.write(line)
 
-        os.remove(file_name)
-        os.rename(temp_name, file_name)
-        shutil.rmtree(temp_dir)
+        os.remove(self.file_name)
+        os.rename(self.temp_name, self.file_name)
+        shutil.rmtree(self.temp_dir)
+
+        for image in set(self.images_to_delete):
+            os.remove(image)
+
+    def replace_images(self, line):
+
+        if not re.search('<img[^<>]+>', line, re.IGNORECASE):
+            return line
+
+        for image in re.finditer('<img[^<>]+src="([^"]+)"', line, re.IGNORECASE):
+
+            image_path = os.path.dirname(os.path.abspath(self.file_name)) + '/' + image.group(1)
+            with open(image_path, 'rb') as image_file:
+                extension = os.path.splitext(image_path)[1][1:]
+                encoded_string = base64.b64encode(image_file.read())
+                line = line[:image.start(1)] + 'data:image/' + extension + ';base64,' + encoded_string + line[image.end(1):]
+
+        self.images_to_delete.append(image_path)
+
+        return line
 
     def get_font_alternatives(self):
         font_alternatives = []

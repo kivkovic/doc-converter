@@ -5,7 +5,7 @@ sys.path.append('./postprocessors')
 from doc2html import DocToHTMLPostProcessor
 
 
-def convert(file_path, target_format, executable='libreoffice', local_fonts = False, font_alternatives = False):
+def convert(file_path, target_format, executable='libreoffice', local_fonts = False, font_alternatives = False, inline_images = True):
 
     if not os.path.isfile(file_path):
         raise Exception('File not found')
