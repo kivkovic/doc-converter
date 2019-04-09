@@ -17,10 +17,11 @@ class DocToHTMLPostProcessor():
 
     def process_html(self):
 
+
         self.temp_dir = tempfile.mkdtemp(prefix='doc2html_')
         self.temp_name = None
 
-        with tempfile.NamedTemporaryFile(dir=self.temp_dir, delete=False) as temporary, open(self.file_name, 'r') as source:
+        with tempfile.NamedTemporaryFile(dir=self.temp_dir, delete=False, mode='w') as temporary, open(self.file_name, 'r') as source:
             self.temp_name = temporary.name
 
             if self.local_fonts:
@@ -45,7 +46,6 @@ class DocToHTMLPostProcessor():
 
                 if re.search('</head[^>]*>', line, re.IGNORECASE):
                     if self.local_fonts:
-                        self.write_document_style(temporary)
                         self.write_font_imports(temporary, resolved_fonts)
                     line_context['head'] = False
 
@@ -67,10 +67,10 @@ class DocToHTMLPostProcessor():
                 if re.search('</style[^>]*>', line, re.IGNORECASE):
                     line_context['style'] = False
 
-                if self.local_fonts:
+                if self.local_fonts and re.search('font(-family:|\\s+face\\s*=)', line, re.IGNORECASE):
                     line = self.replace_line_fonts(line, resolved_alternatives, line_context)
 
-                if self.inline_images:
+                if self.inline_images and re.search('<img[^<>]+>', line, re.IGNORECASE):
                     line = self.replace_images(line)
 
                 temporary.write(line)
@@ -83,10 +83,6 @@ class DocToHTMLPostProcessor():
             os.remove(image)
 
     def replace_images(self, line):
-
-        if not re.search('<img[^<>]+>', line, re.IGNORECASE):
-            return line
-
         for image in re.finditer('<img[^<>]+src="([^"]+)"', line, re.IGNORECASE):
 
             image_path = self.output_path + '/' + image.group(1)
@@ -94,7 +90,7 @@ class DocToHTMLPostProcessor():
             with open(image_path, 'rb') as image_file:
                 extension = os.path.splitext(image_path)[1][1:]
                 encoded_string = base64.b64encode(image_file.read())
-                line = line[:image.start(1)] + 'data:image/' + extension + ';base64,' + encoded_string + line[image.end(1):]
+                line = line[:image.start(1)] + 'data:image/' + extension + ';base64,' + str(encoded_string) + line[image.end(1):]
 
             self.images_to_delete.append(image_path)
 
@@ -106,7 +102,7 @@ class DocToHTMLPostProcessor():
         with open(self.font_alternatives, 'r') as fonts_file:
             for line in fonts_file:
                 font_alternatives.append(
-                    map(lambda name: name.strip().replace('"', '').replace("'", ""), line.rstrip().split(',')))
+                    list(map(lambda name: name.strip().replace('"', '').replace("'", ""), line.rstrip().split(','))))
 
         return font_alternatives
 
@@ -195,18 +191,13 @@ class DocToHTMLPostProcessor():
         return fonts
 
     def replace_line_fonts(self, line, font_alternatives, line_context):
-        if re.search('font(-family:|\\s+face\\s*=)', line, re.IGNORECASE):
-            for font in font_alternatives:
-                if line_context['style'] and not line_context['script']:
-                    line = re.sub('(font-family:)\\s*("?' + font + '"?[^;}]+)', '\\1 ' + font_alternatives[font], line, re.IGNORECASE)
-                if line_context['body'] and not line_context['script'] and not line_context['head']:
-                    line = re.sub('(<\\s*font[^>]+face\\s*=\\s*\")(' + font + '[^\"]+)(\"\\s*>)', '\\1' + font_alternatives[font].replace('"', '') + '\\3', line, re.IGNORECASE)
+        for font in font_alternatives:
+            if line_context['style'] and not line_context['script']:
+                line = re.sub('(font-family:)\\s*("?' + font + '"?[^;}]+)', '\\1 ' + font_alternatives[font], line, re.IGNORECASE)
+            if line_context['body'] and not line_context['script'] and not line_context['head']:
+                line = re.sub('(<\\s*font[^>]+face\\s*=\\s*\")(' + font + '[^\"]+)(\"\\s*>)', '\\1' + font_alternatives[font].replace('"', '') + '\\3', line, re.IGNORECASE)
 
         return line
-
-    def write_document_style(self, target):
-        target.write('<style type="text/css">\nhtml { width: 100%; height: 100%; margin: 0; padding: 0}\n' +
-                     'body { width: 597px; margin: 76px; }\n</style>\n')
 
     def write_font_imports(self, target, fonts):
         target.write('<style type="text/css">')
@@ -237,23 +228,23 @@ class DocToHTMLPostProcessor():
 
     def guess_weight(self, name):
         suffix = '\\s*(cond(ensed)?|obliq(ue)?|ital(ic)?)?$'
-        # try larger matches first
-        if re.search('((ultra|heavy)-?(black|bold)|extra-?black|fat|poster)' + suffix, name, re.IGNORECASE):
+        # try larger regexes first
+        if re.search('^((ultra|heavy)-?(black|bold)|extra-?black|fat|poster)' + suffix, name, re.IGNORECASE):
             return 900
-        if re.search('(heavy|black|extra-?bold)' + suffix, name, re.IGNORECASE):
+        if re.search('^(heavy|black|extra-?bold)' + suffix, name, re.IGNORECASE):
             return 800
-        if re.search('((s|d)emi-?bold)' + suffix, name, re.IGNORECASE):
+        if re.search('^((s|d)emi-?bold)' + suffix, name, re.IGNORECASE):
             return 600
-        if re.search('(bold)' + suffix, name, re.IGNORECASE):
+        if re.search('^(bold)' + suffix, name, re.IGNORECASE):
             return 700
-        if re.search('(thin|hairline|(ultra|extra)-?light)' + suffix, name, re.IGNORECASE):
+        if re.search('^(thin|hairline|(ultra|extra)-?light)' + suffix, name, re.IGNORECASE):
             return 100
-        if re.search('(light)' + suffix, name, re.IGNORECASE):
+        if re.search('^(light)' + suffix, name, re.IGNORECASE):
             return 200
-        if re.search('(medium)' + suffix, name, re.IGNORECASE):
+        if re.search('^(medium)' + suffix, name, re.IGNORECASE):
             return 500
-        if re.search('(book)' + suffix, name, re.IGNORECASE):
+        if re.search('^(book)' + suffix, name, re.IGNORECASE):
             return 300
-        if re.search('(regular|normal|plain|standard|roman)' + suffix, name, re.IGNORECASE):
+        if re.search('^(regular|normal|plain|standard|roman)' + suffix, name, re.IGNORECASE):
             return 400
         return None
