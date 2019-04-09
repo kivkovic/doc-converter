@@ -90,7 +90,7 @@ class DocToHTMLPostProcessor():
 
             with open(image_path, 'rb') as image_file:
                 extension = os.path.splitext(image_path)[1][1:]
-                encoded_string = base64.b64encode(image_file.read())
+                encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
                 line = line[:image.start(1)] + 'data:image/' + extension + ';base64,' + str(encoded_string) + line[image.end(1):]
 
             self.images_to_delete.append(image_path)
@@ -171,68 +171,57 @@ class DocToHTMLPostProcessor():
             break
 
         for filename in font_files:
-            re.matches = re.match('^(.+)\.ttf$', filename)
-            if re.matches:
+            if re.match('^(.+)\\.ttf$', filename, re.IGNORECASE):
                 font = TTFont(path + filename)
                 table = font["name"]
                 family_name = None
+                legacy_name = None
                 style = None
-                weight = None
 
                 for plat_id, enc_id, lang_id in (WINDOWS_ENGLISH_IDS, MAC_ROMAN_IDS):
-                    for name_id in (FAMILY_RELATED_IDS["PREFERRED_FAMILY"], FAMILY_RELATED_IDS["LEGACY_FAMILY"]):
-                        family_name = table.getName(nameID=name_id, platformID=plat_id, platEncID=enc_id, langID=lang_id)
-                        if family_name is not None:
-                            break
+                    family_name = family_name if family_name else table.getName(nameID=FAMILY_RELATED_IDS["PREFERRED_FAMILY"], platformID=plat_id, platEncID=enc_id, langID=lang_id)
+                    legacy_name = legacy_name if legacy_name else table.getName(nameID=FAMILY_RELATED_IDS["LEGACY_FAMILY"], platformID=plat_id, platEncID=enc_id, langID=lang_id)
+                    style = style if style else table.getName(nameID=FAMILY_RELATED_IDS["STYLE"], platformID=plat_id, platEncID=enc_id, langID=lang_id)
 
-                    style = table.getName(nameID=FAMILY_RELATED_IDS["STYLE"], platformID=plat_id, platEncID=enc_id, langID=lang_id)
+                legacy_name = legacy_name.toUnicode() if legacy_name else ''
+                family_name = family_name.toUnicode() if family_name else legacy_name
+                style = style.toUnicode().lower() if style else ''
+                weight = self.guess_weight(style) or self.guess_weight(family_name) or 400
 
-                    if family_name is not None and style is not None:
-                        break
-
-                family_name = family_name.toUnicode()
-                style = style.toUnicode()
-                weight = self.guess_weight(style) or 400
-
-                if style and re.match('.*(ital(ic)?|obliq(ue)?)', style, re.IGNORECASE):
+                if re.match('.*(ital(ic)?|obliq(ue)?)', style, re.IGNORECASE):
                     style = 'italic'
 
-                fonts.append(dict(font_name=family_name, font_weight=weight, font_style=style, font_path=path + filename))
+                fonts.append(dict(font_name=family_name, legacy_name=legacy_name, font_weight=weight, font_style=style, font_path=path + filename))
 
         return fonts
 
-    def replace_line_fonts(self, line, font_alternatives, line_context):
-        for font in font_alternatives:
-            if line_context['style'] and not line_context['script']:
-                line = re.sub('(font-family:)\\s*("?' + font + '"?[^;}]+)', '\\1 ' + font_alternatives[font], line, re.IGNORECASE)
-            if line_context['body'] and not line_context['script'] and not line_context['head']:
-                line = re.sub('(<\\s*font[^>]+face\\s*=\\s*\")(' + font + '[^\"]+)(\"\\s*>)', '\\1' + font_alternatives[font].replace('"', '') + '\\3', line, re.IGNORECASE)
+    def replace_line_fonts(self, line, resolved_fonts, font_alternatives, line_context): #TODO
+        if line_context['style'] and not line_context['script']:
+            pass
+        if line_context['body'] and not line_context['script'] and not line_context['head']:
+            pass
 
         return line
 
     def write_font_imports(self, target, fonts):
         target.write('<style type="text/css">')
         for font in fonts:
-            woff2file = open(font['font_path'].replace('.ttf', '.woff2'), 'r')
-            ttffile = open(font['font_path'], 'r')
+            ttffile = open(font['font_path'], 'rb')
 
             target.write(
                 """
                 @font-face {
                     font-family: '%s',
-                    src: url(data:application/font-woff;charset=utf-8;base64,%s) format('woff2'),
-                         url(data:application/font-ttf;charset=utf-8;base64,%s) format('ttf');
+                    src: url(data:application/font-ttf;charset=utf-8;base64,%s) format('ttf');
                     font-weight: %d;
                     font-style: %s;
                 }
                 """ % (font['font_name'],
-                       base64.b64encode(woff2file.read()),
-                       base64.b64encode(ttffile.read()),
+                       base64.b64encode(ttffile.read()).decode('utf-8'),
                        font['font_weight'],
                        font['font_style'])
             )
 
-            woff2file.close()
             ttffile.close()
 
         target.write('</style>\n')
