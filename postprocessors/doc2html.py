@@ -18,7 +18,6 @@ class DocToHTMLPostProcessor():
 
     def process_html(self):
 
-
         self.temp_dir = tempfile.mkdtemp(prefix='doc2html_')
         self.temp_name = None
 
@@ -34,7 +33,7 @@ class DocToHTMLPostProcessor():
                 else:
                     font_alternatives = []
 
-                (resolved_fonts, resolved_alternatives) = self.get_resolved_fonts(detected_fonts, available_fonts, font_alternatives)
+                resolved_fonts = self.get_resolved_fonts(detected_fonts, available_fonts, font_alternatives)
 
             line_context = dict(head=False, body=False, script=False, style=False)
 
@@ -42,6 +41,7 @@ class DocToHTMLPostProcessor():
             temporary.seek(0)
 
             for line in source:
+
                 if re.search('<head[^>]*>', line, re.IGNORECASE):
                     line_context['head'] = True
 
@@ -69,7 +69,7 @@ class DocToHTMLPostProcessor():
                     line_context['style'] = False
 
                 if self.local_fonts and re.search('font(-family:|\\s+face\\s*=)', line, re.IGNORECASE):
-                    line = self.replace_line_fonts(line, resolved_alternatives, line_context)
+                    line = self.replace_line_fonts(line, resolved_fonts, font_alternatives, line_context)
 
                 if self.inline_images and re.search('<img[^<>]+>', line, re.IGNORECASE):
                     line = self.replace_images(line)
@@ -117,37 +117,24 @@ class DocToHTMLPostProcessor():
                 for font in fontfamily + fontface:
                     if font and len(font) > 1:
                         fonts.append(
-                            re.sub('^(.+)((, (sans|(sans-)?serif|mono(space)?))|( Fallback))$', '\\1',
-                                font[1].replace('"', '').replace("'", ""),
-                                re.IGNORECASE))
+                            re.sub('\\s*(, (sans|(sans-)?serif|mono(space)?))$', '', font[1].replace('"', '').replace("'", ""), re.IGNORECASE).strip())
 
         return list(set(fonts))
 
     def get_resolved_fonts(self, detected_fonts, available_fonts, font_alternatives):
         resolved_fonts = []
-        resolved_names = []
-        resolved_alternatives = dict()
+        unresolved = []
+        for detected in detected_fonts:
+            found = False
+            for font in available_fonts:
+                if detected == font["font_name"] or detected == font["legacy_name"]:
+                    resolved_fonts.append(font)
+                    found = True
 
-        for document_font in detected_fonts:
-            for physical_font in available_fonts:
-                if physical_font['font_name'] == document_font and physical_font not in resolved_fonts:
-                    resolved_fonts.append(physical_font)
-                    if document_font not in resolved_names:
-                        resolved_names.append(document_font)
+            if not found: # TODO
+                pass
 
-        for document_font in detected_fonts:
-            if document_font not in resolved_names:
-                for alternative_font in font_alternatives:
-                    if document_font == alternative_font[0]:
-                        for physical_font in available_fonts:
-                            for idx in range(1, len(alternative_font)):
-                                if physical_font['font_name'] == alternative_font[idx]:
-                                    if document_font not in resolved_alternatives:
-                                        resolved_alternatives[document_font] =\
-                                            ', '.join(map(lambda name: ' ' in name and '"' + name + '"' or name, alternative_font))
-                                    resolved_fonts.append(physical_font)
-
-        return (resolved_fonts, resolved_alternatives)
+        return resolved_fonts
 
     def get_physical_fonts(self, path):
 
@@ -229,22 +216,22 @@ class DocToHTMLPostProcessor():
     def guess_weight(self, name):
         suffix = '\\s*(cond(ensed)?|obliq(ue)?|ital(ic)?)?$'
         # try larger regexes first
-        if re.search('^((ultra|heavy)-?(black|bold)|extra-?black|fat|poster)' + suffix, name, re.IGNORECASE):
+        if re.search('((ultra|heavy)-?(black|bold)|extra-?black|fat|poster)' + suffix, name, re.IGNORECASE):
             return 900
-        if re.search('^(heavy|black|extra-?bold)' + suffix, name, re.IGNORECASE):
+        if re.search('(heavy|black|extra-?bold)' + suffix, name, re.IGNORECASE):
             return 800
-        if re.search('^((s|d)emi-?bold)' + suffix, name, re.IGNORECASE):
+        if re.search('((s|d)emi-?bold)' + suffix, name, re.IGNORECASE):
             return 600
-        if re.search('^(bold)' + suffix, name, re.IGNORECASE):
+        if re.search('(bold)' + suffix, name, re.IGNORECASE):
             return 700
-        if re.search('^(thin|hairline|(ultra|extra)-?light)' + suffix, name, re.IGNORECASE):
+        if re.search('(thin|hairline|(ultra|extra)-?light)' + suffix, name, re.IGNORECASE):
             return 100
-        if re.search('^(light)' + suffix, name, re.IGNORECASE):
+        if re.search('(light)' + suffix, name, re.IGNORECASE):
             return 200
-        if re.search('^(medium)' + suffix, name, re.IGNORECASE):
+        if re.search('(medium)' + suffix, name, re.IGNORECASE):
             return 500
-        if re.search('^(book)' + suffix, name, re.IGNORECASE):
+        if re.search('(book)' + suffix, name, re.IGNORECASE):
             return 300
-        if re.search('^(regular|normal|plain|standard|roman)' + suffix, name, re.IGNORECASE):
+        if re.search('(regular|normal|plain|standard|roman)' + suffix, name, re.IGNORECASE):
             return 400
         return None
