@@ -1,4 +1,5 @@
 import tempfile, os, shutil, re, base64
+from fontTools.ttLib import TTFont
 
 class DocToHTMLPostProcessor():
 
@@ -150,6 +151,19 @@ class DocToHTMLPostProcessor():
 
     def get_physical_fonts(self, path):
 
+        WINDOWS_ENGLISH_IDS = 3, 1, 0x409
+        MAC_ROMAN_IDS = 1, 0, 0
+
+        FAMILY_RELATED_IDS = dict(
+            LEGACY_FAMILY=1,
+            STYLE=2,
+            TRUETYPE_UNIQUE_ID=3,
+            FULL_NAME=4,
+            POSTSCRIPT_NAME=6,
+            PREFERRED_FAMILY=16,
+            WWS_FAMILY=21,
+        )
+
         fonts = []
         font_files = []
         for (dirpath, dirnames, filenames) in os.walk(path):
@@ -157,36 +171,33 @@ class DocToHTMLPostProcessor():
             break
 
         for filename in font_files:
-
-            re.matches = re.match('^(.+)-(.+).ttf$', filename)
+            re.matches = re.match('^(.+)\.ttf$', filename)
             if re.matches:
-                families = re.matches.group(1).split(',')
-                fonttype = re.matches.group(2).split(',')
-                fontstyle = None
+                font = TTFont(path + filename)
+                table = font["name"]
+                family_name = None
+                style = None
+                weight = None
 
-                common_name = families[0]
-                weight = self.guess_weight(families[0])
-
-                if len(families) > 1:
-                    if re.match('.*cond', families[1]) and not re.match('.*cond', families[0]):
-                        common_name = families[0] + ' ' + 'Condensed'
-                    weight = self.guess_weight(families[1]) or weight
-
-                for fstyle in re.matches.groups():
-                    if not fontstyle and re.match('.*(ital(ic)?|obliq(ue)?)', fstyle, re.IGNORECASE):
-                        fontstyle = 'italic'
-                    if not re.match('.*cond', common_name, re.IGNORECASE) and re.match('.*Cond', fstyle):
-                        common_name = common_name + ' ' + 'Condensed'
-
-                if not weight:
-                    for ftype in fonttype:
-                        weight = self.guess_weight(ftype)
-                        if weight:
+                for plat_id, enc_id, lang_id in (WINDOWS_ENGLISH_IDS, MAC_ROMAN_IDS):
+                    for name_id in (FAMILY_RELATED_IDS["PREFERRED_FAMILY"], FAMILY_RELATED_IDS["LEGACY_FAMILY"]):
+                        family_name = table.getName(nameID=name_id, platformID=plat_id, platEncID=enc_id, langID=lang_id)
+                        if family_name is not None:
                             break
 
-                weight = weight or 400
-                fontstyle = fontstyle or 'normal'
-                fonts.append(dict(font_name=common_name, font_weight=weight, font_style=fontstyle, font_path=path + filename))
+                    style = table.getName(nameID=FAMILY_RELATED_IDS["STYLE"], platformID=plat_id, platEncID=enc_id, langID=lang_id)
+
+                    if family_name is not None and style is not None:
+                        break
+
+                family_name = family_name.toUnicode()
+                style = style.toUnicode()
+                weight = self.guess_weight(style) or 400
+
+                if style and re.match('.*(ital(ic)?|obliq(ue)?)', style, re.IGNORECASE):
+                    style = 'italic'
+
+                fonts.append(dict(font_name=family_name, font_weight=weight, font_style=style, font_path=path + filename))
 
         return fonts
 
