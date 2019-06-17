@@ -56,13 +56,15 @@ def convert(file_path, target_format, output_file = None, executable = None, loc
         log.error(e)
         return False
 
+    log.info('Created process with pid ' + str(libreprocess.pid))
+
     timeout = 0
     while True:
         returncode = libreprocess.poll()
 
         if returncode != None:
             if returncode == 0:
-                log.info('Return code: ' + str(returncode))
+                log.info('Return code from pid ' + str(libreprocess.pid) + ': ' + str(returncode))
                 libreprocess.wait()
 
                 output_file = os.path.realpath(output_file)
