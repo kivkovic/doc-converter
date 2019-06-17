@@ -6,7 +6,7 @@ import os, subprocess, shutil, re, sys, glob, tempfile, time, logging
 def convert(file_path, target_format, output_path = None, executable = None, local_fonts = False, font_alternatives = False, inline_images = True, proc_timeout = 60):
 
     if not os.path.isfile(file_path):
-        raise Exception('File not found')
+        raise Exception('File not found: ' + file_path)
 
     if executable:
         executable_root = re.sub('[\\/][^\\/]*$', '', executable)
@@ -150,4 +150,7 @@ if __name__ == '__main__':
         usage()
         raise Exception('Target format not specified')
 
-    convert(file_path, target_format, output_path, executable, local_fonts, font_alternatives, inline_images, proc_timeout)
+    try:
+        convert(file_path, target_format, output_path, executable, local_fonts, font_alternatives, inline_images, proc_timeout)
+    except Exception as e:
+        log.error(e)
