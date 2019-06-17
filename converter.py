@@ -43,8 +43,6 @@ def convert(file_path, target_format, output_file = None, executable = None, loc
         file_path
     ]
 
-    log.info('Calling subprocess.Popen with arguments: ' + ' '.join(arguments))
-
     try:
         libreprocess = subprocess.Popen(arguments, executable = executable_root + '/' + executable_file, env = os.environ)
         with open(temp_profile_dir + '/nonce.log', 'w+') as nonce:
@@ -53,10 +51,11 @@ def convert(file_path, target_format, output_file = None, executable = None, loc
             nonce.write('ARGUMENTS: ' + ' '.join(arguments) + '\n')
 
     except Exception as e:
+        log.info('Failed opening process with arguments: ' + ' '.join(arguments))
         log.error(e)
         return False
 
-    log.info('Created process with pid ' + str(libreprocess.pid))
+    log.info('Created process with pid ' + str(libreprocess.pid) + ' using arguments: ' + ' '.join(arguments))
 
     timeout = 0
     while True:
@@ -81,7 +80,7 @@ def convert(file_path, target_format, output_file = None, executable = None, loc
 
                 return True
             else:
-                log.error('Return code: ' + str(returncode))
+                log.error('Return code from pid ' + str(libreprocess.pid) + ': ' + str(returncode))
                 break
 
         timeout += 1
@@ -90,7 +89,7 @@ def convert(file_path, target_format, output_file = None, executable = None, loc
         else:
             break
 
-    log.error('Process timed out after ' + str(proc_timeout) + 's')
+    log.error('Process with pid ' + str(libreprocess.pid) + ' timed out after ' + str(proc_timeout) + 's')
     if libreprocess:
         try:
             libreprocess.kill()
