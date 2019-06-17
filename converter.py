@@ -78,7 +78,8 @@ def convert(file_path, target_format, output_file = None, executable = None, loc
                 shutil.move(os.path.realpath(converted_file), output_file)
                 shutil.rmtree(temp_profile_dir)
 
-                return True
+                sys.exit(0)
+
             else:
                 log.error('Return code from pid ' + str(libreprocess.pid) + ': ' + str(returncode))
                 break
@@ -100,8 +101,7 @@ def convert(file_path, target_format, output_file = None, executable = None, loc
 
     time.sleep(3)
     shutil.rmtree(temp_profile_dir)
-
-    return False
+    sys.exit(1)
 
 
 log = type('', (), {})()
@@ -126,14 +126,14 @@ if __name__ == '__main__':
 
     if len(''.join(sys.argv[1:])) == 0:
         usage()
-        sys.exit(0)
+        sys.exit(1)
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'i:o:f:', ['executable=', 'local-fonts=', 'font-alternatives=', 'inline-images', 'timeout='])
     except getopt.GetoptError as e:
         log.error(e)
         usage()
-        sys.exit(2)
+        sys.exit(1)
 
     file_path = None
     target_format = None
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     for opt, arg in opts:
         if opt == '-h':
             usage()
-            sys.exit(2)
+            sys.exit(1)
         elif opt == '-i':
             file_path = arg
         elif opt == '-o':
@@ -169,17 +169,21 @@ if __name__ == '__main__':
 
         else:
             usage()
-            raise Exception('Invalid parameter: ' + arg)
+            print('Invalid parameter: ' + arg)
+            sys.exit(1)
 
     if not file_path:
         usage()
-        raise Exception('Source file not specified')
+        print('Source file not specified')
+        sys.exit(1)
 
     if not target_format:
         usage()
-        raise Exception('Target format not specified')
+        print('Target format not specified')
+        sys.exit(1)
 
     try:
         convert(file_path, target_format, output_file, executable, local_fonts, font_alternatives, inline_images, proc_timeout)
     except Exception as e:
         log.error(e)
+        sys.exit(1)
