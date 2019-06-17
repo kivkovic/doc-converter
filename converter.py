@@ -113,12 +113,16 @@ if __name__ == '__main__':
     import getopt
 
     def usage():
-        print('python converter.py -i [INPUT_FILE] -o [OUTPUT_FILE] -f [FORMAT] [--executable=[LIBREOFFICE_PATH]] [--timeout=[SECONDS]]')
+        print('python converter.py -i [INPUT_FILE] -o [OUTPUT_FILE] -f [FORMAT] [--executable=[LIBREOFFICE_PATH]] [--timeout=[SECONDS]]\n * executable path is auto-resolved if not provided\n * timeout defaults to 60 seconds')
         #print('python converter.py -i [INPUT_FILE] -o [OUTPUT_FILE] -f [FORMAT] [--executable=[LIBREOFFICE_PATH]] [--local-fonts=[LOCAL_FONTS]] [-font-alternatives=[FONT_ALTERNATIVES]] [--inline-images] [--timeout=[SECONDS]]')
 
     log = logging.getLogger(__name__)
     logging.basicConfig(filename = 'doc-converter.log', level = logging.INFO, format = '%(asctime)-15s %(message)s')
     log.info('Started doc-converter with arguments: ' + ' '.join(sys.argv[1:]))
+
+    if len(''.join(sys.argv[1:])) == 0:
+        usage()
+        sys.exit(0)
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'i:o:f:', ['executable=', 'local-fonts=', 'font-alternatives=', 'inline-images', 'timeout='])
