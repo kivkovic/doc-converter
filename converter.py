@@ -51,7 +51,7 @@ def convert(file_path, target_format, output_path = None, executable = None, loc
         with open(temp_profile_dir + '/nonce.log', 'w+') as nonce:
             nonce.write('TIME:' + str(time.time()) + '\n')
             nonce.write('PID:' + str(libreprocess.pid))
-            nonce.write('ARGUMENTS' : ' '.join(arguments))
+            nonce.write('ARGUMENTS: ' + ' '.join(arguments))
 
     except Exception as e:
         log.error(e)
