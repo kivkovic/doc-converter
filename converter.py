@@ -3,7 +3,7 @@ import os, subprocess, shutil, re, sys, glob, tempfile, time, logging
 #sys.path.append('./postprocessors')
 #from doc2html import DocToHTMLPostProcessor
 
-def convert(file_path, target_format, output_path = None, executable = None, local_fonts = False, font_alternatives = False, inline_images = True, proc_timeout = 10000):
+def convert(file_path, target_format, output_path = None, executable = None, local_fonts = False, font_alternatives = False, inline_images = True, proc_timeout = 60):
 
     if not os.path.isfile(file_path):
         raise Exception('File not found')
@@ -63,20 +63,20 @@ def convert(file_path, target_format, output_path = None, executable = None, loc
                 log.error('Return code: ' + str(returncode))
                 break
 
-        timeout += 1000
+        timeout += 1
         if timeout <= proc_timeout:
             time.sleep(1)
         else:
             break
 
-    log.error('Process timed out after ' + proc_timeout + 'ms')
+    log.error('Process timed out after ' + str(proc_timeout) + 's')
     if libreprocess:
         try:
             libreprocess.kill()
-            log.info('Sent kill to process')
+            log.info('Sent SIGTERM/SIGKILL to process')
         except AttributeError:
             os.kill(libreprocess.pid, 9)
-            log.info('Sent kill 9 to process')
+            log.info('Sent SIGTERM -9 to process')
 
     time.sleep(3)
     shutil.rmtree(temp_profile_dir)
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     log.info('Started doc-converter with arguments: ' + ' '.join(sys.argv[1:]))
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'i:o:f:', ['executable=', 'local-fonts=', 'font-alternatives=', 'inline-images'])
+        opts, args = getopt.getopt(sys.argv[1:], 'i:o:f:', ['executable=', 'local-fonts=', 'font-alternatives=', 'inline-images', 'timeout='])
     except getopt.GetoptError as e:
         log.error(e)
         usage()
@@ -113,6 +113,7 @@ if __name__ == '__main__':
     local_fonts = False
     font_alternatives = False
     inline_images = False
+    proc_timeout = None
 
     for opt, arg in opts:
         if opt == '-h':
@@ -134,6 +135,8 @@ if __name__ == '__main__':
             font_alternatives = arg
         elif opt == '--inline-images':
             inline_images = True
+        elif opt == '--timeout': # seconds
+            proc_timeout = int(arg) or None
 
         else:
             usage()
@@ -147,4 +150,4 @@ if __name__ == '__main__':
         usage()
         raise Exception('Target format not specified')
 
-    convert(file_path, target_format, output_path, executable, local_fonts, font_alternatives, inline_images)
+    convert(file_path, target_format, output_path, executable, local_fonts, font_alternatives, inline_images, proc_timeout)
