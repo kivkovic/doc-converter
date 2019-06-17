@@ -1,4 +1,4 @@
-import os, subprocess, shutil, re, sys, glob, tempfile, time, logging, errno
+import os, subprocess, shutil, re, sys, glob, tempfile, time, errno
 
 #sys.path.append('./postprocessors')
 #from doc2html import DocToHTMLPostProcessor
@@ -109,14 +109,19 @@ log.log = log.debug = log.info = log.warning = log.error = log.exception = log.c
 
 if __name__ == '__main__':
 
-    import getopt
+    import getopt, logging, logging.handlers
 
     def usage():
         print('python converter.py -i [INPUT_FILE] -o [OUTPUT_FILE] -f [FORMAT] [--executable=[LIBREOFFICE_PATH]] [--timeout=[SECONDS]]\n * executable path is auto-resolved if not provided\n * timeout defaults to 60 seconds')
         #print('python converter.py -i [INPUT_FILE] -o [OUTPUT_FILE] -f [FORMAT] [--executable=[LIBREOFFICE_PATH]] [--local-fonts=[LOCAL_FONTS]] [-font-alternatives=[FONT_ALTERNATIVES]] [--inline-images] [--timeout=[SECONDS]]')
 
+    logfile = 'doc-converter.log'
     log = logging.getLogger(__name__)
-    logging.basicConfig(filename = 'doc-converter.log', level = logging.INFO, format = '%(asctime)-15s %(message)s')
+    log.setLevel(logging.INFO)
+    handler = logging.handlers.RotatingFileHandler(logfile, maxBytes=1024*1024, backupCount=10)
+    handler.setFormatter(logging.Formatter('%(asctime)-15s %(levelname)s %(message)s'))
+    log.addHandler(handler)
+
     log.info('Started doc-converter with arguments: ' + ' '.join(sys.argv[1:]))
 
     if len(''.join(sys.argv[1:])) == 0:
