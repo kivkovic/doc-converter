@@ -113,8 +113,8 @@ if __name__ == '__main__':
     import getopt
 
     def usage():
-        print('python converter.py -i [INPUT_FILE] -o [OUTPUT_FILE] -f [FORMAT] [--executable=[LIBREOFFICE_PATH]]')
-        #print('python converter.py -i [INPUT_FILE] -o [OUTPUT_FILE] -f [FORMAT] [--executable=[LIBREOFFICE_PATH]] [--local-fonts=[LOCAL_FONTS]] [-font-alternatives=[FONT_ALTERNATIVES]] [--inline-images]')
+        print('python converter.py -i [INPUT_FILE] -o [OUTPUT_FILE] -f [FORMAT] [--executable=[LIBREOFFICE_PATH]] [--timeout=[SECONDS]]')
+        #print('python converter.py -i [INPUT_FILE] -o [OUTPUT_FILE] -f [FORMAT] [--executable=[LIBREOFFICE_PATH]] [--local-fonts=[LOCAL_FONTS]] [-font-alternatives=[FONT_ALTERNATIVES]] [--inline-images] [--timeout=[SECONDS]]')
 
     log = logging.getLogger(__name__)
     logging.basicConfig(filename = 'doc-converter.log', level = logging.INFO, format = '%(asctime)-15s %(message)s')
