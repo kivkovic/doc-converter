@@ -9,8 +9,8 @@ def convert(file_path, target_format, output_path = None, executable = None, loc
         raise Exception('File not found: ' + file_path)
 
     if executable:
-        executable_root = re.sub('[\\/][^\\/]*$', '', executable)
-        executable_file = re.sub('^.*[\\/]*', '', executable)
+        executable_root = re.sub('[\\\\/][^\\\\/]*$', '', executable)
+        executable_file = re.sub('^.*[\\\\/]+', '', executable)
 
     else:
         paths = glob.glob(os.environ['PROGRAMFILES'] + '\\LibreOffice*') + \
