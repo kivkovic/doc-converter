@@ -1,9 +1,9 @@
-import os, subprocess, shutil, re, sys, glob, tempfile, time, logging
+import os, subprocess, shutil, re, sys, glob, tempfile, time, logging, errno
 
 #sys.path.append('./postprocessors')
 #from doc2html import DocToHTMLPostProcessor
 
-def convert(file_path, target_format, output_path = None, executable = None, local_fonts = False, font_alternatives = False, inline_images = True, proc_timeout = 60):
+def convert(file_path, target_format, output_file = None, executable = None, local_fonts = False, font_alternatives = False, inline_images = True, proc_timeout = 60):
 
     if not os.path.isfile(file_path):
         raise Exception('File not found: ' + file_path)
@@ -26,7 +26,6 @@ def convert(file_path, target_format, output_path = None, executable = None, loc
                         executable_file = binary
                         break
 
-    output_path = output_path or re.sub('^(.+)[/\\][^/\\]+$', '\\1', file_path)
     temp_profile_dir = tempfile.mkdtemp(prefix = 'doc-converter_').replace('\\', '/')
 
     arguments = [
@@ -40,7 +39,7 @@ def convert(file_path, target_format, output_path = None, executable = None, loc
         '--nologo',
         '--norestore',
         '--convert-to', target_format,
-        '--outdir', output_path,
+        '--outdir', temp_profile_dir,
         file_path
     ]
 
@@ -65,7 +64,19 @@ def convert(file_path, target_format, output_path = None, executable = None, loc
             if returncode == 0:
                 log.info('Return code: ' + str(returncode))
                 libreprocess.wait()
+
+                output_file = os.path.realpath(output_file)
+                try:
+                    os.makedirs(re.sub('[\\\\/][^\\\\/]*$', '', output_file))
+                except OSError as e:
+                    if e.errno != errno.EEXIST:
+                        raise
+
+                converted_file = re.sub('\\.[^.\\\\/]+$', '.' + target_format, temp_profile_dir + '/' + re.sub('^.*[\\\\/]+', '', file_path))
+
+                shutil.move(os.path.realpath(converted_file), output_file)
                 shutil.rmtree(temp_profile_dir)
+
                 return True
             else:
                 log.error('Return code: ' + str(returncode))
@@ -116,7 +127,7 @@ if __name__ == '__main__':
 
     file_path = None
     target_format = None
-    output_path = None
+    output_file = None
     executable = None
     local_fonts = False
     font_alternatives = False
@@ -130,7 +141,7 @@ if __name__ == '__main__':
         elif opt == '-i':
             file_path = arg
         elif opt == '-o':
-            output_path = arg
+            output_file = arg
         elif opt == '-f':
             target_format = arg
         elif opt == '--executable':
@@ -159,6 +170,6 @@ if __name__ == '__main__':
         raise Exception('Target format not specified')
 
     try:
-        convert(file_path, target_format, output_path, executable, local_fonts, font_alternatives, inline_images, proc_timeout)
+        convert(file_path, target_format, output_file, executable, local_fonts, font_alternatives, inline_images, proc_timeout)
     except Exception as e:
         log.error(e)
