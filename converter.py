@@ -28,11 +28,10 @@ def convert(file_path, target_format, output_path = None, executable = None, loc
 
     output_path = output_path or re.sub('^(.+)[/\\][^/\\]+$', '\\1', file_path)
     temp_profile_dir = tempfile.mkdtemp(prefix = 'doc-converter_').replace('\\', '/')
-    env_override_user = '-env:UserInstallation=file:///' + temp_profile_dir
 
     arguments = [
         executable_file,
-        env_override_user,
+        '-env:UserInstallation=file:///' + temp_profile_dir, # only way to ensure multiple instances of soffice can be started
         '--headless',
         '--invisible',
         '--nocrashreport',
@@ -47,9 +46,13 @@ def convert(file_path, target_format, output_path = None, executable = None, loc
 
     log.info('Calling subprocess.Popen with arguments: ' + ' '.join(arguments))
 
-    libreprocess = subprocess.Popen(arguments, executable = executable_root + '/' + executable_file, env = os.environ)
-    timeout = 0
+    try:
+        libreprocess = subprocess.Popen(arguments, executable = executable_root + '/' + executable_file, env = os.environ)
+    except Exception as e:
+        log.error(e)
+        return False
 
+    timeout = 0
     while True:
         returncode = libreprocess.poll()
 
